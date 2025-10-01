@@ -1,0 +1,39 @@
+It’s great that your professor is engaging with your approach to the "Project Profile Finder" assignment! 
+Here’s how you might frame your response regarding your approach, the algorithm used, and any questions you have, 
+based on the work we’ve discussed.
+
+### Approach
+We’re tackling this project by breaking it into manageable layers. We start by parsing the provided JSON 
+Lines file to build a directed road graph using `petgraph`, ensuring we maintain a mapping of node IDs for efficient lookups. 
+To handle the spatial search for starting points within distance \(D\) of center \(C\), we’re employing an R-tree spatial 
+index with `rstar`, which allows us to quickly identify candidate edges. This aligns with the objective of using advanced 
+data structures to process geometric data efficiently.
+
+For the route search, we’re using a beam search algorithm with a configurable beam width (set to 50 for now) to approximate 
+the optimal path that matches the target elevation profile \(P\). The search prioritizes paths based on an estimated normalized area score, aiming to keep the total length within the tolerance \(\epsilon = \max(5.0, 0.05 \cdot L)\). We extract the route’s relative elevation profile using piecewise-linear interpolation along edges, which supports the requirement to apply geometric algorithm techniques.
+
+Our matching score is based on the area between the actual and target profiles, computed as the integral of the 
+absolute difference over the route length, with an optional vertical offset \(z_0\) derived from the average difference at sample 
+points. This choice reflects the need to capture the overall "feel" of the ride, avoiding issues with point-wise matching that 
+might miss oscillations, and it guides the route search effectively.
+
+### Algorithm Used
+The algorithm follows these steps:
+1. **Input Parsing**: Read the JSONL file, construct the `RoadGraph` with `petgraph::StableGraph`, and build an R-tree index of edges for spatial queries.
+2. **Start Selection**: Query the R-tree for edges within Euclidean distance \(D\) of \(C\), projecting the center point onto edges and splitting them with interpolated nodes if necessary.
+3. **Route Search**: Implement beam search starting from candidate points. For each step, extend paths to neighboring edges, estimate the full score (current area / length * \(L\)), and retain the top \(k\) paths. Check for length tolerance and compute the final score with offset when within range.
+4. **Profile Extraction**: For a candidate route, interpolate elevations at sample distances \(d_i\) and construct the relative profile \(P_\pi\).
+5. **Profile Matching**: Calculate the area-based score using the `AreaMatcher`, adjusting for \(z_0\) to minimize error.
+
+This approach leverages approximation techniques for space searching and simplification for efficient pathfinding, meeting the project’s algorithmic requirements.
+
+### Complexity
+- **Preprocessing**: \(O(M \log M)\) for building the R-tree, where \(M\) is the number of edges.
+- **Query Handling**: \(O(\log N + \text{candidates})\) for spatial search, plus \(O(B \cdot \text{depth} \cdot \text{deg})\) for beam search, where \(B\) is beam width, \(\text{depth}\) is proportional to \(L/\text{avg edge length}\), and \(\text{deg}\) is average node degree. With short edges (≤100m), this is practical.
+
+### Questions
+- Could you clarify if the graph is guaranteed to be connected within the search radius, or should we implement a fallback for disconnected components?
+- Are there recommended tools or libraries beyond those allowed (JSON parsing, plotting, basic geometry) that could enhance our visualization during the demo?
+- Would it be valuable to explore a hierarchical approach (as suggested) further, and if so, how might we integrate it with our current R-tree setup?
+
+This setup should give you a solid foundation to discuss with your professor, and I’m happy to refine any part as you get feedback!
