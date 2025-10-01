@@ -43,8 +43,8 @@ pub fn build_graph_from_jsonl(path: &Path) -> Result<RoadGraph> {
                 let id = record["id"].as_u64().ok_or(anyhow!("Invalid edge id"))?;
                 let u = record["u"].as_u64().ok_or(anyhow!("Invalid u"))?;
                 let v = record["v"].as_u64().ok_or(anyhow!("Invalid v"))?;
-                let length = record["length m"].as_f64().ok_or(anyhow!("Invalid length"))?;
-                let climb = record["climb m"].as_f64().ok_or(anyhow!("Invalid climb"))?;
+                let length = record["length_m"].as_f64().ok_or(anyhow!("Invalid length"))?;
+                let climb = record["climb_m"].as_f64().ok_or(anyhow!("Invalid climb"))?;
                 let slope = record["slope"].as_f64().ok_or(anyhow!("Invalid slope"))?;
                 let u_idx = *node_map.get(&u).ok_or(anyhow!("Unknown u"))?;
                 let v_idx = *node_map.get(&v).ok_or(anyhow!("Unknown v"))?;
@@ -94,7 +94,7 @@ pub fn find_route(data: &AppData, query: &Query) -> Result<Option<Route>> {
         if dist > query.d {
             continue;
         }
-        let (proj, fraction) = project_point_to_segment(&[query.c.0, query.c.1], se);
+        let (_proj, fraction) = project_point_to_segment(&[query.c.0, query.c.1], se);
         let partial_len = (1.0 - fraction) * se.length;
         let partial_climb = (1.0 - fraction) * se.climb;
         let area = integral_abs_diff(partial_len, 0.0 - query.p.interpolate(0.0), partial_climb - query.p.interpolate(partial_len));
@@ -164,9 +164,17 @@ pub fn find_route(data: &AppData, query: &Query) -> Result<Option<Route>> {
         }
         // Sort by estimated full score, keep top
         next_beam.sort_by(|a, b| {
-            let est_a = if a.length > 0.0 { a.cum_area / a.length * l } else { 0.0 };
-            let est_b = if b.length > 0.0 { b.cum_area / b.length * l } else { 0.0 };
-            est_a.partial_cmp(&est_b).unwrap()
+            let est_a = if a.length > 0.0 && a.cum_area.is_finite() {
+                a.cum_area / a.length * l
+            } else {
+                f64::INFINITY
+            };
+            let est_b = if b.length > 0.0 && b.cum_area.is_finite() {
+                b.cum_area / b.length * l
+            } else {
+                f64::INFINITY
+            };
+            est_a.partial_cmp(&est_b).unwrap_or(std::cmp::Ordering::Equal)
         });
         beam = next_beam.into_iter().take(beam_width).collect();
     }

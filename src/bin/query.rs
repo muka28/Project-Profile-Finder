@@ -3,7 +3,7 @@ use clap::Parser;
 use project_profile_finder::application::find_route;
 use project_profile_finder::domain::{Profile, Query};
 use project_profile_finder::infrastructure::load_data;
-use std::io::{self, BufRead};
+use std::io;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]

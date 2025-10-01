@@ -37,3 +37,20 @@ This approach leverages approximation techniques for space searching and simplif
 - Would it be valuable to explore a hierarchical approach (as suggested) further, and if so, how might we integrate it with our current R-tree setup?
 
 This setup should give you a solid foundation to discuss with your professor, and I’m happy to refine any part as you get feedback!
+
+
+
+
+
+
+
+
+
+
+Start with interactive mode:
+  cargo run --bin interactive -- -i sample.bin
+
+  Create visualizations:
+  cargo run --bin visualize -- -i sample.bin --cx 80 --cy 80 --distance 50 --profile "0,0,160,5"
+
+  Try example routes from EXAMPLES.md:
